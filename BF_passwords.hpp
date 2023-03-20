@@ -24,8 +24,8 @@ private:
     char numAndAlpha[62];
     char numAndSpecial[41];
     char alphaAndSpecial[84];
-    char allChar[94];
 public:
+    char allChar[94];
     std::set<std::string, LengthCmp> passwordsHash;
     CharSet();
     void make_char_set();
