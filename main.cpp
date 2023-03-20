@@ -1,14 +1,24 @@
 #include <iostream>
 #include <string>
 #include <fstream>
-#include <random>
-#include "BF_header.hpp"
+#include "BF_passwords.hpp"
 
 int main() {
 
-    std::fstream logFile;
+    std::ofstream logFile;
     logFile.open("bruteForce.log");
 
+    std::ofstream passwordFile;
+    passwordFile.open("password.txt");
 
+    CharSet passwordBF;
+    passwordBF.make_password();
 
+    for(auto i : passwordBF.passwordsHash) {
+        passwordFile << i << std::endl;
+        //std::cout << i << std::endl;
+    }
+    
+    logFile.close();
+    passwordFile.close();
 }
