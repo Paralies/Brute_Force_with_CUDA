@@ -50,12 +50,12 @@ __device__ int my_comp(char* str1, char* str2, int N) {
 	return flag;
 }
 
-__global__ void bruteforce(char* _password, char* _allChar, bool _checkFind, int _allCharLen, long long int next) {
+__global__ void bruteforce(char* _password, char* _allChar, char* _found, int _allCharLen, long long int next) {
 	extern __shared__ char s_alphabet[];
 
 	char candidate[8]; // char candidate = (char*)malloc(sizeof(char)*N);
 	int digit[8] = { 0, };
-	int passLen = my_strlen(_password);
+	//int passLen = my_strlen(_password);
 
 	for (int i = 0; i < _allCharLen; i++)
 		s_alphabet[i] = _allChar[i];
@@ -80,8 +80,9 @@ __global__ void bruteforce(char* _password, char* _allChar, bool _checkFind, int
                     }
                     candidate[k] = '\0';
 
-                    if (!my_comp(_password, candidate, passLen)) {
-				        _checkFind = true;
+                    if (!my_comp(_password, candidate, 8)) {
+				        my_strcpy(_found, candidate);
+				        _found[k] = '\0';
 				        return;
 			        }
 			    }
@@ -110,11 +111,13 @@ void password_crack() {
     CharSet passwordBF;
     cudaEvent_t start, stop;
     std::ofstream logFile;
+    std::string result;
 
     int host_AllCharLen = sizeof(passwordBF.allChar) / sizeof(passwordBF.allChar[0]);
     char* device_Password;
     char* device_allCharacters;
-    bool device_checkFind;
+    char* device_found;
+    char host_found[8] = {0, };
     int progressCount=0;
     float workTime = 0;
 
@@ -125,6 +128,7 @@ void password_crack() {
 	CUDA_CHECK(cudaEventCreate(&stop));
 
     CUDA_CHECK(cudaMalloc((void**)&device_allCharacters, sizeof(char) * host_AllCharLen + 1));
+    CUDA_CHECK(cudaMalloc((void**)&device_found, sizeof(char) * 8 + 1));
 	CUDA_CHECK(cudaMemcpy(device_allCharacters, passwordBF.allChar, sizeof(char) * host_AllCharLen + 1, cudaMemcpyHostToDevice));
 
     for(auto password : passwordBF.passwordsHash) {
@@ -138,13 +142,18 @@ void password_crack() {
         dim3 threadsPerBlock(host_AllCharLen, 1);
 	    dim3 blocksPerGrid((int)std::pow((float)host_AllCharLen, (float)(3)), 1);
 
-        bruteforce<<<blocksPerGrid, threadsPerBlock, sizeof(char) * host_AllCharLen >>>(device_Password, device_allCharacters, device_checkFind, host_AllCharLen, 0);
+        bruteforce<<<blocksPerGrid, threadsPerBlock, sizeof(char) * host_AllCharLen >>>(device_Password, device_allCharacters, device_found, host_AllCharLen, 0);
+        CUDA_CHECK(cudaMemcpy(host_found, device_found, sizeof(char) * 8 + 1, cudaMemcpyDeviceToHost));
 
-    	CUDA_CHECK(cudaEventRecord(stop));
-		cudaEventSynchronize(stop);
+        result = host_found;
 
-		CUDA_CHECK(cudaEventElapsedTime(&workTime, start, stop));
-		logFile << progressCount << "th password: " << password << "(time consumed=" << workTime << "ms" << ")" << std::endl;
+        if(result.compare(password) == 0) {
+            CUDA_CHECK(cudaEventRecord(stop));
+		    cudaEventSynchronize(stop);
+
+		    CUDA_CHECK(cudaEventElapsedTime(&workTime, start, stop));
+		    logFile << progressCount << "th password: " << result << "(time consumed=" << workTime << "ms" << ")" << std::endl;
+        }
 
         CUDA_CHECK(cudaFree(device_Password));
     }
