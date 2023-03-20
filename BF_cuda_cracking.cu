@@ -50,40 +50,47 @@ __device__ int my_comp(char* str1, char* str2, int N) {
 	return flag;
 }
 
-__global__ void bruteforce(char* pass, char* alphabet, char* dest, int N, long long int next) { // N = alphabet length 
+__global__ void bruteforce(char* _password, char* _allChar, bool _checkFind, int _allCharLen, long long int next) {
 	extern __shared__ char s_alphabet[];
 
-	char test[100]; // char test = (char*)malloc(sizeof(char)*N);
-	int digit[7] = { 0, };
-	int passLen = my_strlen(pass);
+	char candidate[8]; // char candidate = (char*)malloc(sizeof(char)*N);
+	int digit[8] = { 0, };
+	int passLen = my_strlen(_password);
 
-	for (int i = 0; i<N; i++)
-		s_alphabet[i] = alphabet[i];
+	for (int i = 0; i < _allCharLen; i++)
+		s_alphabet[i] = _allChar[i];
 
-	digit[6] = blockIdx.x >= N*N*N ? (int)((blockIdx.x / (N*N*N)) % N) : 0;
-	digit[5] = blockIdx.x >= N*N ? (int)((blockIdx.x / (N*N)) % N) : 0;
-	digit[4] = blockIdx.x >= N ? (int)((blockIdx.x / N) % N) : 0;
-	digit[3] = (int)(blockIdx.x % N);
-	digit[2] = threadIdx.x;
+	digit[7] = blockIdx.x >= _allCharLen * _allCharLen * _allCharLen ? (int)((blockIdx.x / (_allCharLen * _allCharLen * _allCharLen)) % _allCharLen) : 0;
+	digit[6] = blockIdx.x >= _allCharLen * _allCharLen ? (int)((blockIdx.x / (_allCharLen * _allCharLen)) % _allCharLen) : 0;
+	digit[5] = blockIdx.x >= _allCharLen ? (int)((blockIdx.x / _allCharLen) % _allCharLen) : 0;
+	digit[4] = (int)(blockIdx.x % _allCharLen);
+	digit[3] = threadIdx.x;
+	digit[2] = 0;
 	digit[1] = 0;
-	digit[0] = 0;
+    digit[0] = 0;
 
-	while (digit[1] < N) {
-		for (int i = 0; digit[0] < N; digit[0]++, ++i) {
-			test[0] = s_alphabet[digit[0]];
+	while (digit[2] < _allCharLen) {
+        while(digit[1] < _allCharLen) {
+		    for (int i = 0; digit[1] < _allCharLen; digit[0]++, ++i) {
+			    candidate[0] = s_alphabet[digit[0]];
 
-			for (int j = 1; j < passLen; j++) {
-				test[j] = s_alphabet[digit[j]];
-			}
-			test[passLen] = '\0';
+                for(int k = 4; k <= 8; k++) {
+			        for (int j = 1; j < k; j++) {
+				        candidate[j] = s_alphabet[digit[j]];
+                    }
+                    candidate[k] = '\0';
 
-			if (!my_comp(pass, test, passLen)) {
-				my_strcpy(dest, test);
-				dest[passLen] = '\0';
-				return;
-			}
-		}
-		++digit[1];
+                    if (!my_comp(_password, candidate, passLen)) {
+				        _checkFind = true;
+				        return;
+			        }
+			    }
+		    }
+            ++digit[1];
+            digit[0] = 0;
+        }
+		++digit[2];
+        digit[1] = 0;
 		digit[0] = 0;
 	}
 }
@@ -109,7 +116,7 @@ void password_crack() {
     char* device_allCharacters;
     bool device_checkFind;
     int progressCount=0;
-    float workTime;
+    float workTime = 0;
 
     logFile.open("bruteForce.log");
     passwordBF.make_password();
@@ -129,14 +136,13 @@ void password_crack() {
         CUDA_CHECK(cudaMemcpy(device_Password, password.c_str(), sizeof(char) * password.length() + 1, cudaMemcpyHostToDevice));
 
         dim3 threadsPerBlock(host_AllCharLen, 1);
-		dim3 blocksPerGrid((int)std::pow((float)host_AllCharLen, (float)(password.length() - 3)), 1);
+	    dim3 blocksPerGrid((int)std::pow((float)host_AllCharLen, (float)(3)), 1);
 
         bruteforce<<<blocksPerGrid, threadsPerBlock, sizeof(char) * host_AllCharLen >>>(device_Password, device_allCharacters, device_checkFind, host_AllCharLen, 0);
 
     	CUDA_CHECK(cudaEventRecord(stop));
 		cudaEventSynchronize(stop);
 
-		std::cout << progressCount << "th password completed!" << std::endl;
 		CUDA_CHECK(cudaEventElapsedTime(&workTime, start, stop));
 		logFile << progressCount << "th password: " << password << "(time consumed=" << workTime << "ms" << ")" << std::endl;
 
@@ -146,3 +152,9 @@ void password_crack() {
     CUDA_CHECK(cudaFree(device_allCharacters));
     logFile.close();
 }
+
+// 63^3 = 250047
+// 63^4 = 15752961
+// 94^3 = 830584
+// 94^4 = 78074896
+// 512 * 512 * 64 = 16777216

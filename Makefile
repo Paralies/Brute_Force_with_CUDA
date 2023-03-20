@@ -1,6 +1,6 @@
 CC = g++
-CFLAGS = -g -Wall
-OBJS = main.o BF_passwords.o
+NVCC = nvcc
+OBJS = BF_cuda_cracking.o BF_passwords.o
 TARGET = BruteForce.out
 
 all: $(TARGET)
@@ -10,7 +10,10 @@ clean:
 	rm -f $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) -o $@ $(OBJS)
+	$(NVCC) -o $@ $(OBJS)
 
-main.o: BF_passwords.hpp BF_passwords.cpp main.cpp
-BF_passwords: BF_passwords.hpp BF_passwords.cpp
+BF_cuda_cracking.o: BF_passwords.hpp BF_cuda_cracking.cu
+	 $(NVCC) -c -o BF_cuda_cracking.o BF_cuda_cracking.cu
+
+BF_passwords.o: BF_passwords.hpp BF_passwords.cpp
+	 $(CC) -c -o BF_passwords.o BF_passwords.cpp

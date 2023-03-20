@@ -52,6 +52,7 @@ __device__ int my_comp(char* str1, char* str2, int N) {
 }
 
 __global__ void bruteforce(char* pass, char* alphabet, char* dest, int N, long long int next) { // N = alphabet length 
+	
 	extern __shared__ char s_alphabet[];
 
 	char test[100]; // char test = (char*)malloc(sizeof(char)*N);
