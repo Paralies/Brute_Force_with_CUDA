@@ -10,14 +10,33 @@ std::random_device rd;
 std::mt19937 gen(rd());
 
 void CharSet::make_char_set() {
+    // Assign numbers
     for(int i = 0; i < 10; i++) {
         numbers[i] = 48 + i;
     }
 
+    // Assign alphabets
     for(int i = 0; i < 26; i++) {
         alphabet[i] = 65 + i;
         alphabet[26 + i] = 97  + i;
     }
+
+    // Assign numbers and alphabets
+    std::copy(numbers, numbers + 10, numAndAlpha);
+    std::copy(alphabet, alphabet + 52, numAndAlpha + 10);
+
+    // Assign numbers and special characters
+    std::copy(numbers, numbers + 10, numAndSpecial);
+    std::copy(special, special + 32, numAndSpecial + 10);
+
+    // Assign alphabets and special characters
+    std::copy(alphabet, alphabet + 52, alphaAndSpecial);
+    std::copy(special, special + 32, alphaAndSpecial + 52);
+
+    // Assign all the characters
+    std::copy(numbers, numbers + 10, allChar);
+    std::copy(alphabet, alphabet + 52, allChar + 10);
+    std::copy(special, special + 32, allChar + 62);
 }
 
 CharSet::CharSet() { // Constructor of the class Charset
@@ -107,10 +126,8 @@ void CharSet::make_num_and_alpha_password() {
 
     std::uniform_int_distribution<int> numAndAlphaRange(0, 61);
     int passwordSetSize = 0;
-    int numAndAlpha[62];
     
-    std::copy(numbers, numbers + 10, numAndAlpha);
-    std::copy(alphabet, alphabet + 52, numAndAlpha + 10);
+
 
     for(int i = 4; i < 9; i++) { // Password length from 4 to 86
         for(int k = 0; k < 10; k++) { // 10 passwords for each length
@@ -138,10 +155,6 @@ void CharSet::make_num_and_special_password() {
 
     std::uniform_int_distribution<int> numAndSpecialRange(0, 41);
     int passwordSetSize = 0;
-    int numAndSpecial[41];
-    
-    std::copy(numbers, numbers + 10, numAndSpecial);
-    std::copy(special, special + 32, numAndSpecial + 10);
 
     for(int i = 4; i < 9; i++) { // Password length from 4 to 86
         for(int k = 0; k < 10; k++) { // 10 passwords for each length
@@ -169,10 +182,6 @@ void CharSet::make_alpha_and_special_password() {
 
     std::uniform_int_distribution<int> alphaAndSpecialRange(0, 83);
     int passwordSetSize = 0;
-    int alphaAndSpecial[84];
-    
-    std::copy(alphabet, alphabet + 52, alphaAndSpecial);
-    std::copy(special, special + 32, alphaAndSpecial + 52);
 
     for(int i = 4; i < 9; i++) { // Password length from 4 to 86
         for(int k = 0; k < 10; k++) { // 10 passwords for each length
@@ -200,11 +209,6 @@ void CharSet::make_all_char_password() {
 
     std::uniform_int_distribution<int> allCharRange(0, 93);
     int passwordSetSize = 0;
-    int allChar[94];
-    
-    std::copy(numbers, numbers + 10, allChar);
-    std::copy(alphabet, alphabet + 52, allChar + 10);
-    std::copy(special, special + 32, allChar + 62);
 
     for(int i = 4; i < 9; i++) { // Password length from 4 to 86
         for(int k = 0; k < 10; k++) { // 10 passwords for each length

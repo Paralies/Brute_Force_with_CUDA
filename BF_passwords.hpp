@@ -1,8 +1,17 @@
 #pragma once
 #include <iostream>
 #include <string>
-#include <unordered_set>
+#include <set>
 #include <random>
+
+struct LengthCmp {
+	bool operator() (const std::string &_Left, const std::string &_Right) const {
+        if (_Left.size() == _Right.size())
+			return _Left < _Right;
+		else
+			return _Left.size() < _Right.size();
+	}
+};
 
 class CharSet{
 private:
@@ -12,8 +21,12 @@ private:
                         '+', ',', '-', '.', '/', ':', ';', '<', '=' , '>', 
                         '?', '@', '[', '\\', ']', '^', '_', '`', '{', '}',
                         '|', '~'};
+    char numAndAlpha[62];
+    char numAndSpecial[41];
+    char alphaAndSpecial[84];
+    char allChar[94];
 public:
-    std::unordered_set<std::string> passwordsHash;
+    std::set<std::string, LengthCmp> passwordsHash;
     CharSet();
     void make_char_set();
     void make_password();
