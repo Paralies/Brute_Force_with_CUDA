@@ -4,12 +4,12 @@
 #include <set>
 #include <random>
 
-struct LengthCmp {
+struct LengthCmp { // Sort from small size to big size, from little ascii to big ascii
 	bool operator() (const std::string &_Left, const std::string &_Right) const {
         if (_Left.size() == _Right.size())
-			return _Left < _Right;
+			return _Left < _Right; // from small size to big size
 		else
-			return _Left.size() < _Right.size();
+			return _Left.size() < _Right.size(); // from little ascii to big ascii
 	}
 };
 
@@ -26,7 +26,7 @@ private:
     char alphaAndSpecial[84];
 public:
     char allChar[94];
-    std::set<std::string, LengthCmp> passwordsHash;
+    std::set<std::string, LengthCmp> passwordsHash; // Store password in set type container to prevent save duplicated one
     CharSet();
     void make_char_set();
     void make_password();

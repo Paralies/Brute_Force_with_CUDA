@@ -3,7 +3,6 @@
 #include <random>
 #include <vector>
 #include <thread>
-//#include <unistd>
 #include "BF_passwords.hpp"
 
 std::random_device rd;
@@ -53,7 +52,7 @@ void CharSet::make_password() {
     make_all_char_password();
 }
 
-void CharSet::make_num_password() {
+void CharSet::make_num_password() { // Make 5~8 letter passwords with numbers
 
     std::uniform_int_distribution<int> numRange(0, 9);
     int passwordSetSize = 0;
@@ -76,7 +75,7 @@ void CharSet::make_num_password() {
     }
 }
 
-void CharSet::make_alpha_password() {
+void CharSet::make_alpha_password() { // Make 5~8 letter passwords with alphabets
 
     std::uniform_int_distribution<int> alphaRange(0, 51);
     int passwordSetSize = 0;
@@ -99,7 +98,7 @@ void CharSet::make_alpha_password() {
     }
 }
 
-void CharSet::make_special_password() {
+void CharSet::make_special_password() { // Make 5~8 letter passwords with special letters
 
     std::uniform_int_distribution<int> specialRange(0, 31);
     int passwordSetSize = 0;
@@ -122,12 +121,10 @@ void CharSet::make_special_password() {
     }
 }
 
-void CharSet::make_num_and_alpha_password() {
+void CharSet::make_num_and_alpha_password() { // Make 5~8 letter passwords with numbers and alphabets
 
     std::uniform_int_distribution<int> numAndAlphaRange(0, 61);
     int passwordSetSize = 0;
-    
-
 
     for(int i = 4; i < 9; i++) { // Password length from 4 to 86
         for(int k = 0; k < 10; k++) { // 10 passwords for each length
@@ -151,7 +148,7 @@ void CharSet::make_num_and_alpha_password() {
     }
 }
 
-void CharSet::make_num_and_special_password() {
+void CharSet::make_num_and_special_password() { // Make 5~8 letter passwords with numbers and special letters
 
     std::uniform_int_distribution<int> numAndSpecialRange(0, 41);
     int passwordSetSize = 0;
@@ -178,7 +175,7 @@ void CharSet::make_num_and_special_password() {
     }
 }
 
-void CharSet::make_alpha_and_special_password() {
+void CharSet::make_alpha_and_special_password() { // Make 5~8 letter passwords with alphabets and special letters
 
     std::uniform_int_distribution<int> alphaAndSpecialRange(0, 83);
     int passwordSetSize = 0;
@@ -205,7 +202,7 @@ void CharSet::make_alpha_and_special_password() {
     }
 }
 
-void CharSet::make_all_char_password() {
+void CharSet::make_all_char_password() { // Make 5~8 letter passwords with the combination of numbers, alphabets and special letters
 
     std::uniform_int_distribution<int> allCharRange(0, 93);
     int passwordSetSize = 0;
@@ -232,24 +229,25 @@ void CharSet::make_all_char_password() {
     }
 }
 
-bool check_single_word_password(std::string _password) {
+bool check_single_word_password(std::string _password) { // Function for checking if a password consisted of one single type of character
     
     int cntNum = 0;
     int cntAlpha = 0;
     int cntSpecial = 0;
 
     for(int i = 0; i < _password.size(); i++) {
-        if(_password[i] >= '0' && _password[i] <= '9') {
+        if(_password[i] >= '0' && _password[i] <= '9') { // Count numbers in a password
             cntNum++;
         }
-        else if((_password[i] >= 'A' && _password[i] <= 'Z') || (_password[i] >= 'a' && _password[i] <= 'z')) {
+        else if((_password[i] >= 'A' && _password[i] <= 'Z') || (_password[i] >= 'a' && _password[i] <= 'z')) { // Count alphabets in a password
             cntAlpha++;
         }
-        else {
+        else { // Count special letters in a password
             cntSpecial++;
         }
     }
-
+    
+    // Check if there is a count number same with the size of password
     if(cntNum == _password.size() || cntAlpha == _password.size() || cntSpecial == _password.size()) {
         return true;
     }
