@@ -139,7 +139,7 @@ void password_crack() {
         CUDA_CHECK(cudaMemcpy(device_Password, password.c_str(), sizeof(char) * password.length() + 1, cudaMemcpyHostToDevice));
 
         dim3 threadsPerBlock(host_AllCharLen, 1);
-	    dim3 blocksPerGrid((int)std::pow((float)host_AllCharLen, (float)(3)), 1);
+	    dim3 blocksPerGrid((int)std::pow((float)host_AllCharLen, (float)(4)), 1);
 
         bruteforce<<<blocksPerGrid, threadsPerBlock, sizeof(char) * host_AllCharLen >>>(device_Password, device_allCharacters, device_found, host_AllCharLen, 0);
         CUDA_CHECK(cudaMemcpy(host_found, device_found, sizeof(char) * MAX_PASSWORD_LEN + 1, cudaMemcpyDeviceToHost));
