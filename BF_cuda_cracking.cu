@@ -112,7 +112,7 @@ void password_crack() {
         CUDA_CHECK(cudaMemcpy(host_found, device_found, sizeof(char) * MAX_PASSWORD_LEN + 1, cudaMemcpyDeviceToHost));
 
 		result = host_found;
-		
+
 		// Brute force 6 letters
 		if(result.compare(password) != 0) {
 			bruteforce_6<<<blocksPerGrid, threadsPerBlock, sizeof(char) * host_AllCharLen >>>(device_Password, device_allCharacters, device_found, host_AllCharLen, 0);
@@ -246,22 +246,26 @@ __global__ void bruteforce_7(char* _password, char* _allChar, char* _found, int 
 		s_alphabet[i] = _allChar[i];
 
 	// Set the threads to find the password in parallel process
-	digit[6] = 0;
-	digit[5] = 0;
-	digit[4] = blockIdx.x >= _allCharLen * _allCharLen * _allCharLen ? (int)((blockIdx.x / (_allCharLen * _allCharLen * _allCharLen)) % _allCharLen) : 0;
-	digit[3] = blockIdx.x >= _allCharLen * _allCharLen ? (int)((blockIdx.x / (_allCharLen * _allCharLen)) % _allCharLen) : 0;
-	digit[2] = blockIdx.x >= _allCharLen ? (int)((blockIdx.x / _allCharLen) % _allCharLen) : 0;
-	digit[1] = (int)(blockIdx.x % _allCharLen);
-	digit[0] = threadIdx.x;
+	digit[6] = blockIdx.x >= _allCharLen * _allCharLen * _allCharLen ? (int)((blockIdx.x / (_allCharLen * _allCharLen * _allCharLen)) % _allCharLen) : 0;
+	digit[5] = blockIdx.x >= _allCharLen * _allCharLen ? (int)((blockIdx.x / (_allCharLen * _allCharLen)) % _allCharLen) : 0;
+	digit[4] = blockIdx.x >= _allCharLen ? (int)((blockIdx.x / _allCharLen) % _allCharLen) : 0;
+	digit[3] = (int)(blockIdx.x % _allCharLen);
+	digit[2] = threadIdx.x;
+	digit[1] = 0;
+	digit[0] = 0;
 
 	// 7 characters
-	for(; digit[6] < _allCharLen; digit[6]++) {
-		for(; digit[5] < _allCharLen; digit[5]++) {
+	// Not Working! Need to find out!
+	/*=================================================
+	for(; digit[0] < _allCharLen; digit[0]++) {
+		candidate[0] = s_alphabet[digit[0]];
+
+		for(; digit[1] < _allCharLen; digit[1]++) {
+			candidate[1] = s_alphabet[digit[1]];
+
 			for (int j = 0; j < 5; j++) {
 				candidate[j] = s_alphabet[digit[j]];
 			}
-			candidate[5] = s_alphabet[digit[5]];
-			candidate[6] = s_alphabet[digit[6]];
         	candidate[7] = '\0';
 
     		if (!comp_gen(_password, candidate)) {
@@ -270,6 +274,27 @@ __global__ void bruteforce_7(char* _password, char* _allChar, char* _found, int 
 				return;
 			}
 		}
+	}
+	=================================================*/
+
+	// 7 characters
+	while (digit[1] < _allCharLen) {
+		for (; digit[0] < _allCharLen; digit[0]++) {
+			candidate[0] = s_alphabet[digit[0]];
+
+			for (int j = 1; j < 7; j++) {
+				candidate[j] = s_alphabet[digit[j]];
+			}
+			candidate[7] = '\0';
+
+			if (!comp_gen(_password, candidate)) {
+				my_strcpy(_found, candidate);
+				_found[7] = '\0';
+				return;
+			}
+		}
+		++digit[1];
+		digit[0] = 0;
 	}
 }
 
