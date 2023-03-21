@@ -39,4 +39,4 @@ public:
     void make_all_char_password();
 };
 
-bool check_single_word_password(std::string _password);
+bool check_single_word_password(std::string, int);

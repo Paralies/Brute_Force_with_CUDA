@@ -134,7 +134,7 @@ void CharSet::make_num_and_alpha_password() { // Make 5~8 letter passwords with 
                 password += numAndAlpha[numAndAlphaRange(gen)];
             }
 
-            if(check_single_word_password(password)) { // Check if the password consists of single character type
+            if(check_single_word_password(password, 2)) { // Check if the password consists of single character type
                 k -= 1; // Regenerate a password
             }
             else{
@@ -161,7 +161,7 @@ void CharSet::make_num_and_special_password() { // Make 5~8 letter passwords wit
                 password += numAndSpecial[numAndSpecialRange(gen)];
             }
 
-            if(check_single_word_password(password)) { // Check if the password consists of single character type
+            if(check_single_word_password(password, 2)) { // Check if the password consists of single character type
                 k -= 1; // Regenerate a password
             }
             else{
@@ -188,7 +188,7 @@ void CharSet::make_alpha_and_special_password() { // Make 5~8 letter passwords w
                 password += alphaAndSpecial[alphaAndSpecialRange(gen)];
             }
 
-            if(check_single_word_password(password)) { // Check if the password consists of single character type
+            if(check_single_word_password(password, 2)) { // Check if the password consists of single character type
                 k -= 1; // Regenerate a password
             }
             else{
@@ -215,7 +215,7 @@ void CharSet::make_all_char_password() { // Make 5~8 letter passwords with the c
                 password += allChar[allCharRange(gen)];
             }
 
-            if(check_single_word_password(password)) { // Check if the password consists of single character type
+            if(check_single_word_password(password, 3)) { // Check if the password consists of single character type
                 k -= 1; // Regenerate a password
             }
             else{
@@ -229,7 +229,7 @@ void CharSet::make_all_char_password() { // Make 5~8 letter passwords with the c
     }
 }
 
-bool check_single_word_password(std::string _password) { // Function for checking if a password consisted of one single type of character
+bool check_single_word_password(std::string _password, int _combiNum) { // Function for checking if a password consisted of one single type of character
     
     int cntNum = 0;
     int cntAlpha = 0;
@@ -247,8 +247,13 @@ bool check_single_word_password(std::string _password) { // Function for checkin
         }
     }
     
-    // Check if there is a count number same with the size of password
+    // Check if there is a count number same with the size of password, return true
     if(cntNum == _password.size() || cntAlpha == _password.size() || cntSpecial == _password.size()) {
+        return true;
+    }
+
+    // Check if there is a count number same with 0 and 3 letter combination, return true
+    if((cntNum == 0 || cntAlpha == 0 || cntSpecial == 0) && _combiNum == 3) {
         return true;
     }
 
