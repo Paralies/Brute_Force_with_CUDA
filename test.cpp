@@ -6,12 +6,10 @@ std::unordered_set<std::string> password;
 
 int main() {
 
-    password.insert("new");
-    password.insert("new");
+    int duration = 0;
 
-    for(auto i : password) {
-        std::cout << '[' << i << ']' << std:: endl;
+    for (int i = 0; duration < 10; duration++, ++i) {
+        std::cout << "10" << std::endl;
+
     }
-
-    std::cout << "size: " << password.size() << std:: endl;
 }

@@ -37,12 +37,13 @@ __device__ int my_strlen(char *string) {
 	}
 	return cnt;
 }
+//=============================================================
 
-__device__ int my_comp(char* str1, char* str2, int N) {
+__device__ int comp_gen(char* str1, char* str2) {
 	int flag = 0;
 
-	for (int i = 0; i<N; i++) {
-		if (str1[i] != str2[i]) {
+	for (int i = 0; ((str1[i] != '\0') && (str2[i] != '\0')); i++) {
+		if ((str1[i] != str2[i])) {
 			flag = 1;
 			break;
 		}
@@ -51,52 +52,10 @@ __device__ int my_comp(char* str1, char* str2, int N) {
 	return flag;
 }
 
-__global__ void bruteforce(char* _password, char* _allChar, char* _found, int _allCharLen, long long int next) {
-	extern __shared__ char s_alphabet[];
-
-	char candidate[MAX_PASSWORD_LEN]; // char candidate = (char*)malloc(sizeof(char)*N);
-	int digit[8] = { 0, };
-	//int passLen = my_strlen(_password);
-
-	for (int i = 0; i < _allCharLen; i++)
-		s_alphabet[i] = _allChar[i];
-
-	digit[7] = blockIdx.x >= _allCharLen * _allCharLen * _allCharLen ? (int)((blockIdx.x / (_allCharLen * _allCharLen * _allCharLen)) % _allCharLen) : 0;
-	digit[6] = blockIdx.x >= _allCharLen * _allCharLen ? (int)((blockIdx.x / (_allCharLen * _allCharLen)) % _allCharLen) : 0;
-	digit[5] = blockIdx.x >= _allCharLen ? (int)((blockIdx.x / _allCharLen) % _allCharLen) : 0;
-	digit[4] = (int)(blockIdx.x % _allCharLen);
-	digit[3] = threadIdx.x;
-	digit[2] = 0;
-	digit[1] = 0;
-	digit[0] = 0;
-
-	while (digit[2] < _allCharLen) {
-        while(digit[1] < _allCharLen) {
-		    for (int i = 0; digit[0] < _allCharLen; digit[0]++, ++i) {
-			    candidate[0] = s_alphabet[digit[0]];
-
-                for(int k = 4; k <= MAX_PASSWORD_LEN; k++) {
-			        for (int j = 1; j < k; j++) {
-				        candidate[j] = s_alphabet[digit[j]];
-                    }
-                    candidate[k] = '\0';
-
-                    if (!my_comp(_password, candidate, MAX_PASSWORD_LEN)) {
-				        my_strcpy(_found, candidate);
-				        _found[k] = '\0';
-				        return;
-			        }
-			    }
-		    }
-            ++digit[1];
-            digit[0] = 0;
-        }
-		++digit[2];
-        digit[1] = 0;
-		digit[0] = 0;
-	}
-}
-//=============================================================
+__global__ void bruteforce_4_and_5(char* _password, char* _allChar, char* _found, int _allCharLen, long long int next);
+__global__ void bruteforce_6(char* _password, char* _allChar, char* _found, int _allCharLen, long long int next);
+__global__ void bruteforce_7(char* _password, char* _allChar, char* _found, int _allCharLen, long long int next);
+__global__ void bruteforce_8(char* _password, char* _allChar, char* _found, int _allCharLen, long long int next);
 void password_crack();
 
 int main() {
@@ -141,11 +100,17 @@ void password_crack() {
         dim3 threadsPerBlock(host_AllCharLen, 1);
 	    dim3 blocksPerGrid((int)std::pow((float)host_AllCharLen, (float)(4)), 1);
 
-        bruteforce<<<blocksPerGrid, threadsPerBlock, sizeof(char) * host_AllCharLen >>>(device_Password, device_allCharacters, device_found, host_AllCharLen, 0);
+        bruteforce_4_and_5<<<blocksPerGrid, threadsPerBlock, sizeof(char) * host_AllCharLen >>>(device_Password, device_allCharacters, device_found, host_AllCharLen, 0);
         CUDA_CHECK(cudaMemcpy(host_found, device_found, sizeof(char) * MAX_PASSWORD_LEN + 1, cudaMemcpyDeviceToHost));
 
-        result = host_found;
+		result = host_found;
 
+		if(result.compare(password) != 0) {
+			bruteforce_6<<<blocksPerGrid, threadsPerBlock, sizeof(char) * host_AllCharLen >>>(device_Password, device_allCharacters, device_found, host_AllCharLen, 0);
+			CUDA_CHECK(cudaMemcpy(host_found, device_found, sizeof(char) * MAX_PASSWORD_LEN + 1, cudaMemcpyDeviceToHost));
+		}
+
+		std::cout << "result: " << result << std::endl;
         if(result.compare(password) == 0) {
             CUDA_CHECK(cudaEventRecord(stop));
 		    cudaEventSynchronize(stop);
@@ -166,3 +131,84 @@ void password_crack() {
 // 94^3 = 830584
 // 94^4 = 78074896
 // 512 * 512 * 64 = 16777216
+// 2^32 - 1 = 4.3 * 10^9
+// 94^5 = 7.3 * 10^9
+
+__global__ void bruteforce_4_and_5(char* _password, char* _allChar, char* _found, int _allCharLen, long long int next) {
+	
+	extern __shared__ char s_alphabet[];
+
+	char candidate[MAX_PASSWORD_LEN + 1]; // char candidate = (char*)malloc(sizeof(char)*N);
+	int digit[8] = { 0, };
+	//int passLen = my_strlen(_password);
+
+	for (int i = 0; i < _allCharLen; i++)
+		s_alphabet[i] = _allChar[i];
+
+	digit[4] = blockIdx.x >= _allCharLen * _allCharLen * _allCharLen ? (int)((blockIdx.x / (_allCharLen * _allCharLen * _allCharLen)) % _allCharLen) : 0;
+	digit[3] = blockIdx.x >= _allCharLen * _allCharLen ? (int)((blockIdx.x / (_allCharLen * _allCharLen)) % _allCharLen) : 0;
+	digit[2] = blockIdx.x >= _allCharLen ? (int)((blockIdx.x / _allCharLen) % _allCharLen) : 0;
+	digit[1] = (int)(blockIdx.x % _allCharLen);
+	digit[0] = threadIdx.x;
+
+	//=====================Search for 4, 5 characters=====================//
+	// 4 characters
+	for(int j = 0; j < 4; j++) {
+		candidate[j] = s_alphabet[digit[j]];
+	}
+        candidate[4] = '\0';
+
+    if(!comp_gen(_password, candidate)) {
+		my_strcpy(_found, candidate);
+		_found[4] = '\0';
+		return;
+	}
+
+	// 5 characters
+	for(int j = 0; j < 5; j++) {
+		candidate[j] = s_alphabet[digit[j]];
+	}
+        candidate[5] = '\0';
+
+    if(!comp_gen(_password, candidate)) {
+		my_strcpy(_found, candidate);
+		_found[5] = '\0';
+		return;
+	}
+	//=====================END Search for 4, 5 characters=====================//
+}
+
+__global__ void bruteforce_6(char* _password, char* _allChar, char* _found, int _allCharLen, long long int next) {
+	
+	extern __shared__ char s_alphabet[];
+
+	char candidate[MAX_PASSWORD_LEN + 1]; // char candidate = (char*)malloc(sizeof(char)*N);
+	int digit[8] = { 0, };
+	//int passLen = my_strlen(_password);
+
+	for (int i = 0; i < _allCharLen; i++)
+		s_alphabet[i] = _allChar[i];
+
+	digit[5] = 0;
+	digit[4] = blockIdx.x >= _allCharLen * _allCharLen * _allCharLen ? (int)((blockIdx.x / (_allCharLen * _allCharLen * _allCharLen)) % _allCharLen) : 0;
+	digit[3] = blockIdx.x >= _allCharLen * _allCharLen ? (int)((blockIdx.x / (_allCharLen * _allCharLen)) % _allCharLen) : 0;
+	digit[2] = blockIdx.x >= _allCharLen ? (int)((blockIdx.x / _allCharLen) % _allCharLen) : 0;
+	digit[1] = (int)(blockIdx.x % _allCharLen);
+	digit[0] = threadIdx.x;
+
+	// 6 characters
+	for(; digit[5] < _allCharLen; digit[5]++) {
+		for (int j = 0; j < 5; j++) {
+			candidate[j] = s_alphabet[digit[j]];
+		}
+		candidate[5] = s_alphabet[digit[5]];
+
+        candidate[6] = '\0';
+
+    	if (!comp_gen(_password, candidate)) {
+			my_strcpy(_found, candidate);
+			_found[6] = '\0';
+			return;
+		}
+	}
+}
