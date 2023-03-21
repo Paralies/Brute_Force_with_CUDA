@@ -39,11 +39,11 @@ __device__ int my_strlen(char *string) {
 }
 //=============================================================
 
-__device__ int comp_gen(char* str1, char* str2) {
+__device__ int comp_gen(char* _str1, char* _str2) {
 	int flag = 0;
 
-	for (int i = 0; ((str1[i] != '\0') || (str2[i] != '\0')); i++) {
-		if ((str1[i] != str2[i])) {
+	for (int i = 0; ((_str1[i] != '\0') || (_str2[i] != '\0')); i++) {
+		if ((_str1[i] != _str2[i])) {
 			flag = 1;
 			break;
 		}
@@ -104,10 +104,21 @@ void password_crack() {
         CUDA_CHECK(cudaMemcpy(host_found, device_found, sizeof(char) * MAX_PASSWORD_LEN + 1, cudaMemcpyDeviceToHost));
 
 		result = host_found;
-
 		if(result.compare(password) != 0) {
 			bruteforce_6<<<blocksPerGrid, threadsPerBlock, sizeof(char) * host_AllCharLen >>>(device_Password, device_allCharacters, device_found, host_AllCharLen, 0);
 			CUDA_CHECK(cudaMemcpy(host_found, device_found, sizeof(char) * MAX_PASSWORD_LEN + 1, cudaMemcpyDeviceToHost));
+			
+			result = host_found;
+			if(result.compare(password) != 0) {
+				bruteforce_7<<<blocksPerGrid, threadsPerBlock, sizeof(char) * host_AllCharLen >>>(device_Password, device_allCharacters, device_found, host_AllCharLen, 0);
+				CUDA_CHECK(cudaMemcpy(host_found, device_found, sizeof(char) * MAX_PASSWORD_LEN + 1, cudaMemcpyDeviceToHost));
+				
+				result = host_found;
+				if(result.compare(password) != 0) {
+					bruteforce_8<<<blocksPerGrid, threadsPerBlock, sizeof(char) * host_AllCharLen >>>(device_Password, device_allCharacters, device_found, host_AllCharLen, 0);
+					CUDA_CHECK(cudaMemcpy(host_found, device_found, sizeof(char) * MAX_PASSWORD_LEN + 1, cudaMemcpyDeviceToHost));
+				}
+			}
 		}
 
 		std::cout << "result: " << result << std::endl;
