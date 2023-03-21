@@ -7,6 +7,7 @@
 #include "device_launch_parameters.h"
 #include "BF_passwords.hpp"
 
+#define MAX_PASSWORD_LEN 8
 //=============================================================
 #if defined(NDEBUG)
 #define CUDA_CHECK(x)	(x)
@@ -53,7 +54,7 @@ __device__ int my_comp(char* str1, char* str2, int N) {
 __global__ void bruteforce(char* _password, char* _allChar, char* _found, int _allCharLen, long long int next) {
 	extern __shared__ char s_alphabet[];
 
-	char candidate[8]; // char candidate = (char*)malloc(sizeof(char)*N);
+	char candidate[MAX_PASSWORD_LEN]; // char candidate = (char*)malloc(sizeof(char)*N);
 	int digit[8] = { 0, };
 	//int passLen = my_strlen(_password);
 
@@ -67,20 +68,20 @@ __global__ void bruteforce(char* _password, char* _allChar, char* _found, int _a
 	digit[3] = threadIdx.x;
 	digit[2] = 0;
 	digit[1] = 0;
-    digit[0] = 0;
+	digit[0] = 0;
 
 	while (digit[2] < _allCharLen) {
         while(digit[1] < _allCharLen) {
-		    for (int i = 0; digit[1] < _allCharLen; digit[0]++, ++i) {
+		    for (int i = 0; digit[0] < _allCharLen; digit[0]++, ++i) {
 			    candidate[0] = s_alphabet[digit[0]];
 
-                for(int k = 4; k <= 8; k++) {
+                for(int k = 4; k <= MAX_PASSWORD_LEN; k++) {
 			        for (int j = 1; j < k; j++) {
 				        candidate[j] = s_alphabet[digit[j]];
                     }
                     candidate[k] = '\0';
 
-                    if (!my_comp(_password, candidate, 8)) {
+                    if (!my_comp(_password, candidate, MAX_PASSWORD_LEN)) {
 				        my_strcpy(_found, candidate);
 				        _found[k] = '\0';
 				        return;
@@ -96,8 +97,6 @@ __global__ void bruteforce(char* _password, char* _allChar, char* _found, int _a
 	}
 }
 //=============================================================
-#define MAX_PASSWORD_LEN 8
-
 void password_crack();
 
 int main() {
@@ -128,7 +127,7 @@ void password_crack() {
 	CUDA_CHECK(cudaEventCreate(&stop));
 
     CUDA_CHECK(cudaMalloc((void**)&device_allCharacters, sizeof(char) * host_AllCharLen + 1));
-    CUDA_CHECK(cudaMalloc((void**)&device_found, sizeof(char) * 8 + 1));
+    CUDA_CHECK(cudaMalloc((void**)&device_found, sizeof(char) * MAX_PASSWORD_LEN + 1));
 	CUDA_CHECK(cudaMemcpy(device_allCharacters, passwordBF.allChar, sizeof(char) * host_AllCharLen + 1, cudaMemcpyHostToDevice));
 
     for(auto password : passwordBF.passwordsHash) {
@@ -143,7 +142,7 @@ void password_crack() {
 	    dim3 blocksPerGrid((int)std::pow((float)host_AllCharLen, (float)(3)), 1);
 
         bruteforce<<<blocksPerGrid, threadsPerBlock, sizeof(char) * host_AllCharLen >>>(device_Password, device_allCharacters, device_found, host_AllCharLen, 0);
-        CUDA_CHECK(cudaMemcpy(host_found, device_found, sizeof(char) * 8 + 1, cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(host_found, device_found, sizeof(char) * MAX_PASSWORD_LEN + 1, cudaMemcpyDeviceToHost));
 
         result = host_found;
 
